@@ -69,7 +69,7 @@ namespace backend.Controllers
                 }
 
                 // Login successful
-                var accessToken = _tokenService.GenerateAccessToken(user);
+                var accessToken = await _tokenService.GenerateAccessToken(user);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
                 // Update user with refresh token
@@ -91,6 +91,13 @@ namespace backend.Controllers
                     Expires = DateTimeOffset.UtcNow.AddDays(7)
                 });
 
+                // Get user roles
+                var userRoles = await _dbContext.UserRoles
+                    .Where(ur => ur.UserId == user.Id)
+                    .Include(ur => ur.Role)
+                    .Select(ur => ur.Role.Name)
+                    .ToListAsync();
+
                 return Ok(new AuthResponse
                 {
                     Id = user.Id,
@@ -98,7 +105,8 @@ namespace backend.Controllers
                     LastName = user.LastName,
                     Matricule = user.Matricule,
                     AccessToken = accessToken,
-                    RefreshToken = refreshToken  // Sending in response for non-cookie clients
+                    RefreshToken = refreshToken,  // Sending in response for non-cookie clients
+                    Roles = userRoles
                 });
             }
             catch (Exception ex)
@@ -129,7 +137,7 @@ namespace backend.Controllers
                     return Unauthorized(new { Message = "Invalid or expired refresh token" });
                 }
 
-                var newAccessToken = _tokenService.GenerateAccessToken(user);
+                var newAccessToken = await _tokenService.GenerateAccessToken(user);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
                 user.RefreshToken = newRefreshToken;
@@ -146,6 +154,13 @@ namespace backend.Controllers
                     Expires = DateTimeOffset.UtcNow.AddDays(7)
                 });
 
+                // Get user roles
+                var userRoles = await _dbContext.UserRoles
+                    .Where(ur => ur.UserId == user.Id)
+                    .Include(ur => ur.Role)
+                    .Select(ur => ur.Role.Name)
+                    .ToListAsync();
+
                 return Ok(new AuthResponse
                 {
                     Id = user.Id,
@@ -153,7 +168,8 @@ namespace backend.Controllers
                     LastName = user.LastName,
                     Matricule = user.Matricule,
                     AccessToken = newAccessToken,
-                    RefreshToken = newRefreshToken
+                    RefreshToken = newRefreshToken,
+                    Roles = userRoles
                 });
             }
             catch (Exception ex)
@@ -212,12 +228,20 @@ namespace backend.Controllers
                     return NotFound(new { Message = "User not found" });
                 }
 
+                // Get user roles
+                var userRoles = await _dbContext.UserRoles
+                    .Where(ur => ur.UserId == id)
+                    .Include(ur => ur.Role)
+                    .Select(ur => ur.Role.Name)
+                    .ToListAsync();
+
                 return Ok(new
                 {
                     user.Id,
                     user.FirstName,
                     user.LastName,
-                    user.Matricule
+                    user.Matricule,
+                    Roles = userRoles
                 });
             }
             catch (Exception ex)

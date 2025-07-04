@@ -28,5 +28,9 @@ namespace backend.Models
         public string? RefreshToken { get; set; }
         
         public DateTime? RefreshTokenExpiryTime { get; set; }
+        
+        // Navigation property for many-to-many relationship with roles
+        [JsonIgnore]
+        public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 } 
